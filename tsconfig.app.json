@@ -4,14 +4,10 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
-    "types": [
-      "node"
-    ]
+    // "types": ["node"] // Removed, as this is typically for Node.js environments (like SSR) and not needed for a client-side app.
   },
   "files": [
-    "src/main.ts",
-    "src/main.server.ts",
-    "src/server.ts"
+    "src/main.ts" // Only include the main entry point for your client-side application
   ],
   "include": [
     "src/**/*.d.ts"
