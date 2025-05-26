@@ -1,17 +1,63 @@
-.container {
+/* General container for the entire application */
+.main-container {
   font-family: 'Inter', sans-serif;
-  max-width: 960px;
+  max-width: 1000px; /* Slightly wider to accommodate header */
   margin: 20px auto;
+  padding: 0 20px; /* Padding for the sides */
+}
+
+/* Header styling */
+.app-header {
+  background-color: #007bff;
+  color: white;
+  padding: 15px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.8em;
+  text-align: left; /* Align title to left */
+  flex-grow: 1; /* Allow title to take available space */
+}
+
+.app-header nav {
+  display: flex;
+  gap: 20px;
+}
+
+.app-header nav a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  padding: 8px 15px;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.app-header nav a:hover {
+  background-color: #0056b3;
+}
+
+.app-header nav a.active-link {
+  background-color: #0056b3;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Styles for the Generator Page content (previously in app.component.css) */
+/* These styles will apply to the content that is displayed when the 'generator' route is active */
+.generator-content {
   padding: 20px;
   background-color: #f9f9f9;
   border-radius: 12px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-h1, h2 {
-  text-align: center;
-  color: #333;
-  margin-bottom: 20px;
+  margin-bottom: 20px; /* Space below generator content */
 }
 
 .header-controls {
@@ -61,7 +107,7 @@ h1, h2 {
 }
 
 .live-dot.active {
-  background-color: #28a745; /* Green when active */
+  background-color: #28a745;
   box-shadow: 0 0 8px rgba(40, 167, 69, 0.5);
 }
 
@@ -128,10 +174,6 @@ button:disabled {
   transition: background-color 0.1s ease;
 }
 
-.grid-cell.updated {
-  background-color: #e6ffe6;
-}
-
 hr {
   border: 0;
   height: 1px;
@@ -139,87 +181,111 @@ hr {
   margin: 40px 0;
 }
 
+/* Payments form styling */
 .payments-form {
   display: flex;
-  gap: 10px;
+  gap: 15px; /* Increased gap for better spacing */
   margin-bottom: 20px;
   justify-content: center;
   flex-wrap: wrap;
+  padding: 15px; /* Added padding to the form container */
+  background-color: #eef; /* Light background for the form */
+  border-radius: 10px; /* Slightly rounded corners */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08); /* Subtle shadow */
 }
 
 .payments-form input {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px; /* Rounded corners */
-  font-size: 1em;
+  padding: 12px 15px; /* Increased padding */
+  border: 1px solid #a0c0e0; /* Softer border color */
+  border-radius: 8px;
+  font-size: 1.05em; /* Slightly larger font */
   flex-grow: 1;
-  max-width: 200px;
+  max-width: 220px; /* Adjusted max-width */
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05); /* Inner shadow for depth */
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.payments-list table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-  background-color: #fff;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+.payments-form input:focus {
+  border-color: #007bff; /* Highlight on focus */
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Focus ring */
+  outline: none; /* Remove default outline */
 }
 
-.payments-list th,
-.payments-list td {
-  border: 1px solid #eee;
-  padding: 12px 15px;
-  text-align: left;
+.payments-form button {
+  padding: 12px 25px; /* Adjusted button padding */
+  background-color: #28a745; /* Green color for add button */
+  box-shadow: 0 4px 6px rgba(40, 167, 69, 0.2); /* Green shadow */
 }
 
-.payments-list th {
-  background-color: #f2f2f2;
+.payments-form button:hover {
+  background-color: #218838; /* Darker green on hover */
+  transform: translateY(-2px);
+}
+
+.payments-form button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* New style for error messages */
+.error-message {
+  color: #dc3545; /* Red color for errors */
+  background-color: #f8d7da; /* Light red background */
+  border: 1px solid #f5c6cb; /* Red border */
+  border-radius: 8px;
+  padding: 10px 15px;
+  margin-top: 15px;
+  text-align: center;
   font-weight: bold;
-  color: #333;
-  text-transform: uppercase;
-  font-size: 0.9em;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.payments-list tr:nth-child(even) {
-  background-color: #f8f8f8;
-}
 
-.payments-list tr:hover {
-  background-color: #eef;
-}
+/* Payments list styles are now primarily in payments-list.component.ts's inline styles */
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .app-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .app-header h1 {
+    text-align: center;
+    width: 100%;
+  }
+  .app-header nav {
+    width: 100%;
+    justify-content: center;
+  }
   .header-controls {
     flex-direction: column;
     align-items: center;
   }
-
   .header-controls > div,
   .header-controls button {
     width: 100%;
     text-align: center;
   }
-
   .character-input input {
     width: 100%;
     max-width: 150px;
   }
-
-  .payments-form {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .payments-form input {
-    width: 100%;
-    max-width: 300px;
-  }
-
   .grid-cell {
     width: 30px;
     height: 30px;
     font-size: 0.9em;
+  }
+  .payments-form {
+    flex-direction: column;
+    align-items: center;
+  }
+  .payments-form input {
+    width: 100%;
+    max-width: 300px; /* Allow inputs to take more width on mobile */
+  }
+  .payments-form button {
+    width: 100%; /* Button takes full width on mobile */
   }
 }

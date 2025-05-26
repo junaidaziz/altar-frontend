@@ -1,59 +1,11 @@
-<div class="container">
-  <h1>{{ title }}</h1>
+<div class="main-container">
+  <header class="app-header">
+    <h1>{{ title }}</h1>
+    <nav>
+      <a routerLink="/generator" routerLinkActive="active-link">Generator</a>
+      <a routerLink="/payments" routerLinkActive="active-link">Payments</a>
+    </nav>
+  </header>
 
-  <div class="header-controls">
-    <div class="character-input">
-      <label for="biasChar">CHARACTER</label>
-      <input id="biasChar" type="text" maxlength="1" [(ngModel)]="biasChar" [disabled]="biasInputDisabled"
-        placeholder="a-z" (keyup.enter)="generateGridWithBias()" />
-    </div>
-    <div class="live-status">
-      <span class="live-dot" [class.active]="liveIndicator"></span> LIVE
-    </div>
-    <div class="code-display">
-      YOUR CODE: {{ code }}
-    </div>
-    <button (click)="generateGridWithBias()" [disabled]="biasInputDisabled">GENERATE 2D GRID</button>
-  </div>
-
-  <div class="grid-container">
-    <div class="grid-row" *ngFor="let row of grid; let i = index">
-      <div class="grid-cell" *ngFor="let char of row; let j = index">
-        {{ char }}
-      </div>
-    </div>
-  </div>
-
-  <hr>
-
-  <h2>Payments</h2>
-  <div class="payments-form">
-    <input type="text" placeholder="Payment Name" [(ngModel)]="newPaymentName">
-    <input type="number" placeholder="Amount" [(ngModel)]="newPaymentAmount">
-    <button (click)="addPayment()">+ ADD</button>
-  </div>
-
-  <div class="payments-list">
-    <table>
-      <thead>
-        <tr>
-          <th>NAME</th>
-          <th>AMOUNT</th>
-          <th>CODE</th>
-          <th>GRID (first 10 chars)</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let payment of payments">
-          <td>{{ payment.name }}</td>
-          <td>{{ payment.amount }}</td>
-          <td>{{ payment.code }}</td>
-          <td>{{ payment.grid[0].slice(0, 10).join('') }}...</td>
-        </tr>
-        <tr *ngIf="payments.length === 0">
-          <td colspan="4" style="text-align: center;">No payments added yet.</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <router-outlet></router-outlet>
 </div>
