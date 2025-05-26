@@ -1,59 +1,65 @@
-# FrontendApp
+# 🚀 Altar Frontend (Angular)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.13.
+This is the **Angular frontend** for the Altar.io Full-Stack Exercise.  
+It consumes the backend API for real-time grid/code updates and payments, and features modern Angular SPA design.
 
-## Development server
+---
 
-To start a local development server, run:
+## 🖥️ Live Demo
 
-```bash
-ng serve
-```
+> After deployment, your app will be available at:  
+> **https://junaidaziz.github.io/altar-frontend/**
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+---
 
-## Code scaffolding
+## ⚡ Quick Start (Development)
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+1. **Install dependencies:**
+    ```bash
+    cd frontend
+    npm install
+    ```
 
-```bash
-ng generate component component-name
-```
+2. **Start the Angular development server:**
+    ```bash
+    npm start
+    ```
+    - **Default port:** `http://localhost:4200/`
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+    > **Note:** Make sure your backend API is running at `http://localhost:3000/` or the URL specified in your environment files.
 
-```bash
-ng generate --help
-```
+3. **Build for production:**
+    ```bash
+    npm run build
+    ```
+    - The output will be in `frontend/dist/<your-project-name>`
 
-## Building
+---
 
-To build the project run:
+## ⚙️ Scripts
 
-```bash
-ng build
-```
+- `npm start` &rarr; Runs `ng serve` (development server, hot reload)
+- `npm run build` &rarr; Builds app for production (outputs to `/dist/`)
+- `npm run lint` &rarr; Lints the codebase
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+---
 
-## Running unit tests
+## 🌐 Backend API
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+- The Angular app expects the backend API running at:
+    ```
+    http://localhost:3000/
+    ```
+- You can adjust this in `src/environments/environment.ts` if needed.
 
-```bash
-ng test
-```
+---
 
-## Running end-to-end tests
+## 🏗️ CI/CD
 
-For end-to-end (e2e) testing, run:
+- **CI:** On every push/PR to `frontend/`, the app is built automatically (`.github/workflows/frontend-ci.yml`)
+- **CD:** On every push to `main`/`master`, the app is deployed to **GitHub Pages** (`.github/workflows/frontend-cd.yml`)
 
-```bash
-ng e2e
-```
+---
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## 🗂️ Project Structure
 
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
