@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, GridResponse, Payment, WebSocketMessage } from '../api.service';
+import { ToastService } from '../toast/toast.service';
 import { Subscription } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http'; // Import HttpErrorResponse
 
@@ -78,7 +79,7 @@ export class GeneratorPageComponent implements OnInit, OnDestroy {
 
   private realTimeUpdatesSubscription!: Subscription;
 
-  constructor(private apiService: ApiService) {}
+  constructor(private apiService: ApiService, private toastService: ToastService) {}
 
   ngOnInit(): void {
     // Initial call to generate grid and handle potential server errors on page load
@@ -138,6 +139,7 @@ export class GeneratorPageComponent implements OnInit, OnDestroy {
       next: (response: GridResponse) => {
         console.log('Grid generation request sent via button.');
         this.gridErrorMessage = null; // Clear error on successful response
+        this.toastService.showSuccess('Grid data loaded');
       },
       error: (err: HttpErrorResponse) => {
         console.error('Error generating grid:', err);
@@ -148,12 +150,19 @@ export class GeneratorPageComponent implements OnInit, OnDestroy {
         } else {
           this.gridErrorMessage = 'An unexpected error occurred while generating grid.';
         }
+        this.toastService.showError(this.gridErrorMessage);
       }
     });
   }
 
   addPayment(): void {
     this.paymentErrorMessage = null; // Clear previous error messages for payment
+
+    if (this.grid.length === 0) {
+      this.paymentErrorMessage = 'No grid data available. Cannot save payment.';
+      this.toastService.showError(this.paymentErrorMessage);
+      return;
+    }
 
     // Client-side validation
     if (!this.newPaymentName.trim()) {
@@ -179,6 +188,7 @@ export class GeneratorPageComponent implements OnInit, OnDestroy {
         this.newPaymentName = '';
         this.newPaymentAmount = null;
         this.paymentErrorMessage = null; // Clear error on success
+        this.toastService.showSuccess('Payment added successfully');
       },
       error: (err: HttpErrorResponse) => {
         console.error('Error adding payment:', err);
@@ -189,6 +199,7 @@ export class GeneratorPageComponent implements OnInit, OnDestroy {
         } else {
           this.paymentErrorMessage = 'An unexpected error occurred while adding payment.';
         }
+        this.toastService.showError(this.paymentErrorMessage);
       }
     });
   }
