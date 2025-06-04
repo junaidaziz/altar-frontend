@@ -1,0 +1,39 @@
+<div class="generator-content">
+  <div class="header-controls">
+    <div class="character-input">
+      <label for="biasChar">CHARACTER</label>
+      <input id="biasChar" type="text" maxlength="1" [(ngModel)]="biasChar" [disabled]="biasInputDisabled"
+        placeholder="a-z" (keyup.enter)="generateGridWithBias()" />
+    </div>
+    <div class="live-status">
+      <span class="live-dot" [class.active]="liveIndicator"></span> LIVE
+    </div>
+    <div class="code-display">
+      YOUR CODE: {{ code }}
+    </div>
+    <button (click)="generateGridWithBias()" [disabled]="biasInputDisabled">GENERATE 2D GRID</button>
+  </div>
+  <div *ngIf="gridErrorMessage" class="error-message">
+    {{ gridErrorMessage }}
+  </div>
+
+  <div class="grid-container">
+    <div class="grid-row" *ngFor="let row of grid; let i = index">
+      <div class="grid-cell" *ngFor="let char of row; let j = index">
+        {{ char }}
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <h2>Add Payment</h2>
+  <div class="payments-form">
+    <input type="text" placeholder="Payment Name" [(ngModel)]="newPaymentName">
+    <input type="number" placeholder="Amount" [(ngModel)]="newPaymentAmount">
+    <button (click)="addPayment()">+ ADD</button>
+  </div>
+  <div *ngIf="paymentErrorMessage" class="error-message">
+    {{ paymentErrorMessage }}
+  </div>
+</div>
