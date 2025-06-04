@@ -1,5 +1,10 @@
-// Allow using process.env without adding Node types globally
-const { API_URL, WS_URL } = process.env;
+const API_URL = (globalThis as any)?.process?.env?.API_URL as
+  | string
+  | undefined;
+const WS_URL = (globalThis as any)?.process?.env?.WS_URL as
+  | string
+  | undefined;
+
 
 export const environment = {
   production: false, // Set to true for production build
