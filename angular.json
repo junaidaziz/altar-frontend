@@ -39,12 +39,11 @@
       "prefix": "app",
       "architect": {
         "build": {
-          // Use the “browser” builder (not “application”)
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
             "outputPath": "dist/frontend-app",
             "index": "src/index.html",
-            "main": "src/main.ts",       // ← required
+            "main": "src/main.ts",
             "polyfills": [
               "zone.js"
             ],
@@ -62,7 +61,6 @@
           },
           "configurations": {
             "production": {
-              // Swap in environment.prod.ts for environment.ts
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
