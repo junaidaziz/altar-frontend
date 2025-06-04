@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { ApiService, Payment, WebSocketMessage } from '../api.service';
+import { ToastService } from '../toast/toast.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -106,7 +107,7 @@ export class PaymentsListComponent implements OnInit, OnDestroy {
   payments: Payment[] = [];
   private realTimeUpdatesSubscription!: Subscription;
 
-  constructor(private apiService: ApiService) {}
+  constructor(private apiService: ApiService, private toastService: ToastService) {}
 
   ngOnInit(): void {
     // Load initial payments from the API
@@ -140,8 +141,12 @@ export class PaymentsListComponent implements OnInit, OnDestroy {
       next: (payments: Payment[]) => {
         this.payments = payments;
         console.log('Payments loaded:', payments);
+        this.toastService.showSuccess('Payments loaded');
       },
-      error: (err) => console.error('Error loading payments:', err)
+      error: (err) => {
+        console.error('Error loading payments:', err);
+        this.toastService.showError('Error loading payments');
+      }
     });
   }
 }

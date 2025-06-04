@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { GeneratorPageComponent } from './generator.component';
 import { ApiService } from '../api.service';
+import { ToastService } from '../toast/toast.service';
 import { of } from 'rxjs';
 
 class MockApiService {
@@ -16,7 +17,10 @@ describe('GeneratorPageComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [GeneratorPageComponent],
-      providers: [{ provide: ApiService, useClass: MockApiService }]
+      providers: [
+        { provide: ApiService, useClass: MockApiService },
+        { provide: ToastService, useValue: { showSuccess: () => {}, showError: () => {} } }
+      ]
     });
     fixture = TestBed.createComponent(GeneratorPageComponent);
     component = fixture.componentInstance;

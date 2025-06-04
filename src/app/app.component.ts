@@ -1,5 +1,6 @@
 import { Component } from "@angular/core";
 import { RouterModule, Routes } from "@angular/router"; // Import Routes
+import { ToastContainerComponent } from "./toast/toast-container.component";
 
 // Import the page components
 import { GeneratorPageComponent } from "./generator/generator.component";
@@ -23,7 +24,7 @@ export const routes: Routes = [
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [RouterModule],
+  imports: [RouterModule, ToastContainerComponent],
   template: `
     <div class="main-container">
       <header class="app-header">
@@ -34,6 +35,7 @@ export const routes: Routes = [
         </nav>
       </header>
       <router-outlet></router-outlet>
+      <app-toast-container></app-toast-container>
     </div>
   `,
   styleUrls: ["./app.component.css"]
