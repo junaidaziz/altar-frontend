@@ -26,7 +26,7 @@ It consumes the backend API for real-time grid/code updates and payments, and fe
     ```
     - **Default port:** `http://localhost:4200/`
 
-    > **Note:** Make sure your backend API is running at `http://localhost:3000/` or the URL specified in your environment files.
+    > **Note:** Make sure your backend API is running at the URL defined by the `API_URL` environment variable (defaults to `http://localhost:3000`).
 
 3. **Build for production:**
     ```bash
@@ -46,11 +46,9 @@ It consumes the backend API for real-time grid/code updates and payments, and fe
 
 ## 🌐 Backend API
 
-- The Angular app expects the backend API running at:
-    ```
-    http://localhost:3000/
-    ```
-- You can adjust this in `src/environments/environment.ts` if needed.
+- The Angular app expects the backend API URL to come from the `API_URL` environment variable.
+    - If not provided, it falls back to `http://localhost:3000/`.
+- You can override this by setting `API_URL` before running or building the application.
 
 ---
 
