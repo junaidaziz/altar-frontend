@@ -1,5 +1,13 @@
 export const environment = {
   production: false, // Set to true for production build
   apiUrl: "http://localhost:3000", // API base URL
-  wsUrl: "ws://localhost:3000" // WebSocket server URL
+  firebase: {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    databaseURL: "YOUR_DATABASE_URL",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  }
 };
