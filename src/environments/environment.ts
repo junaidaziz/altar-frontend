@@ -1,6 +1,11 @@
-// Allow using process.env without adding Node types globally
-declare const process: { env: Record<string, string | undefined> };
-const { API_URL, WS_URL } = process.env;
+// Access environment variables provided at build time.
+// `globalThis.process` may not exist in the browser, so we read it safely.
+const API_URL = (globalThis as any)?.process?.env?.API_URL as
+  | string
+  | undefined;
+const WS_URL = (globalThis as any)?.process?.env?.WS_URL as
+  | string
+  | undefined;
 
 export const environment = {
   production: false, // Set to true for production build
