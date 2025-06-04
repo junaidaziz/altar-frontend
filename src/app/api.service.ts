@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, Subject } from 'rxjs';
-import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { environment } from '../environments/environment';
 import { map } from 'rxjs/operators'; // Import the map operator
+import { Database, ref, onValue } from '@angular/fire/database';
 
 export interface GridResponse {
   grid: string[][];
@@ -35,35 +35,24 @@ export interface WebSocketMessage {
 })
 export class ApiService {
   private apiUrl = environment.apiUrl;
-  private wsUrl = environment.wsUrl;
-  private websocket!: WebSocketSubject<WebSocketMessage>;
+  private firebaseUnsubscribe: (() => void) | null = null;
 
   private realTimeUpdatesSubject = new Subject<WebSocketMessage>();
   public realTimeUpdates$ = this.realTimeUpdatesSubject.asObservable();
 
-  constructor(private http: HttpClient) {
-    this.connectWebSocket();
+  constructor(private http: HttpClient, private db: Database) {
+    this.connectFirebase();
   }
 
-  private connectWebSocket(): void {
-    this.websocket = webSocket<WebSocketMessage>(this.wsUrl);
-
-    this.websocket.subscribe({
-      next: msg => {
-        // Convert timestamp string to Date object for payments if it exists
-        // This handles payments received via WebSocket
+  private connectFirebase(): void {
+    const updatesRef = ref(this.db, 'updates');
+    this.firebaseUnsubscribe = onValue(updatesRef, snapshot => {
+      const msg = snapshot.val() as WebSocketMessage | null;
+      if (msg) {
         if (msg.type === 'new_payment' && msg.payment && typeof msg.payment.timestamp === 'string') {
           msg.payment.timestamp = new Date(msg.payment.timestamp);
         }
         this.realTimeUpdatesSubject.next(msg);
-      },
-      error: err => {
-        console.error('WebSocket error:', err);
-        setTimeout(() => this.connectWebSocket(), 5000);
-      },
-      complete: () => {
-        console.log('WebSocket connection completed. Attempting to reconnect...');
-        setTimeout(() => this.connectWebSocket(), 5000);
       }
     });
   }
@@ -93,9 +82,10 @@ export class ApiService {
     return this.http.post<Payment>(`${this.apiUrl}/api/payments`, payment);
   }
 
-  closeWebSocket(): void {
-    if (this.websocket) {
-      this.websocket.complete();
+  closeFirebase(): void {
+    if (this.firebaseUnsubscribe) {
+      this.firebaseUnsubscribe();
+      this.firebaseUnsubscribe = null;
     }
   }
 }
