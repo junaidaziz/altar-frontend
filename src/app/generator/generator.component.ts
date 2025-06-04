@@ -119,11 +119,19 @@ export class GeneratorPageComponent implements OnInit, OnDestroy {
   generateGridWithBias(): void {
     this.gridErrorMessage = null; // Clear previous error messages for grid
 
+    if (this.biasChar && !/^[a-z]$/i.test(this.biasChar)) {
+      this.gridErrorMessage = 'Bias character must be a letter a-z.';
+      return;
+    }
+
+    if (this.biasChar) {
+      this.biasChar = this.biasChar.toLowerCase();
+    }
+
     this.biasInputDisabled = true;
     clearTimeout(this.biasTimer);
     this.biasTimer = setTimeout(() => {
       this.biasInputDisabled = false;
-      this.biasChar = '';
     }, 4000);
 
     this.apiService.getGrid(this.biasChar || null).subscribe({
