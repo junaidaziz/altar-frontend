@@ -1,5 +1,9 @@
+// Allow using process.env without adding Node types globally
+declare const process: { env: Record<string, string | undefined> };
+const { API_URL, WS_URL } = process.env;
+
 export const environment = {
   production: false, // Set to true for production build
-  apiUrl: "http://localhost:3000", // API base URL
-  wsUrl: "ws://localhost:3000" // WebSocket server URL
+  apiUrl: API_URL ?? "http://localhost:3000", // API base URL
+  wsUrl: WS_URL ?? "ws://localhost:3000" // WebSocket server URL
 };
