@@ -1,6 +1,11 @@
 // Allow using process.env without adding Node types globally
-declare const process: { env: Record<string, string | undefined> };
-const { API_URL, WS_URL } = process.env;
+// but guard against the variable not existing in the browser
+declare const process: { env: Record<string, string | undefined> } | undefined;
+
+const API_URL =
+  typeof process !== 'undefined' ? process.env['API_URL'] : undefined;
+const WS_URL =
+  typeof process !== 'undefined' ? process.env['WS_URL'] : undefined;
 
 export const environment = {
   production: false, // Set to true for production build
