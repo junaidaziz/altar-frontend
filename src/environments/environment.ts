@@ -1,5 +1,4 @@
 // Allow using process.env without adding Node types globally
-declare const process: { env: Record<string, string | undefined> };
 const { API_URL, WS_URL } = process.env;
 
 export const environment = {
