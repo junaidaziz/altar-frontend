@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ApiService, Payment, WebSocketMessage } from '../api.service';
 import { ToastService } from '../toast/toast.service';
 import { Subscription } from 'rxjs';
@@ -7,10 +7,7 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-payments-list',
   standalone: true,
-  imports: [
-    CommonModule,
-    DatePipe
-  ],
+  imports: [CommonModule],
   template: `
     <div class="payments-container">
       <h2>Payments History</h2>
@@ -31,11 +28,17 @@ import { Subscription } from 'rxjs';
               <td>{{ payment.name }}</td>
               <td>{{ payment.amount }}</td>
               <td>{{ payment.code }}</td>
-              <td>{{ payment.grid[0].slice(0, 10).join('') }}...</td>
-              <td>{{ payment.timestamp | date:'short' }}</td>
+              <td>
+                {{ payment.gridSnippet || payment.grid[0].cells.slice(0, 10).join('') }}...
+              </td>
+              <td>
+                {{ payment.timestamp ? (payment.timestamp | date:'short') : '' }}
+              </td>
             </tr>
             <tr *ngIf="payments.length === 0">
-              <td colspan="5" style="text-align: center;">No payments added yet.</td>
+              <td colspan="5" style="text-align: center;">
+                No payments added yet.
+              </td>
             </tr>
           </tbody>
         </table>
@@ -43,7 +46,6 @@ import { Subscription } from 'rxjs';
     </div>
   `,
   styles: [`
-    /* Basic styling for the payments list page */
     .payments-container {
       font-family: 'Inter', sans-serif;
       max-width: 960px;
@@ -53,13 +55,11 @@ import { Subscription } from 'rxjs';
       border-radius: 12px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
-
     h2 {
       text-align: center;
       color: #333;
       margin-bottom: 20px;
     }
-
     .payments-list table {
       width: 100%;
       border-collapse: collapse;
@@ -69,14 +69,12 @@ import { Subscription } from 'rxjs';
       overflow: hidden;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
-
     .payments-list th,
     .payments-list td {
       border: 1px solid #eee;
       padding: 12px 15px;
       text-align: left;
     }
-
     .payments-list th {
       background-color: #f2f2f2;
       font-weight: bold;
@@ -84,20 +82,16 @@ import { Subscription } from 'rxjs';
       text-transform: uppercase;
       font-size: 0.9em;
     }
-
     .payments-list tr:nth-child(even) {
       background-color: #f8f8f8;
     }
-
     .payments-list tr:hover {
       background-color: #eef;
     }
-
-    /* Responsive adjustments */
     @media (max-width: 768px) {
       .payments-list th,
       .payments-list td {
-        padding: 8px 10px; /* Smaller padding on mobile */
+        padding: 8px 10px;
         font-size: 0.8em;
       }
     }
@@ -107,19 +101,31 @@ export class PaymentsListComponent implements OnInit, OnDestroy {
   payments: Payment[] = [];
   private realTimeUpdatesSubscription!: Subscription;
 
-  constructor(private apiService: ApiService, private toastService: ToastService) {}
+  constructor(
+    private apiService: ApiService,
+    private toastService: ToastService
+  ) {}
 
   ngOnInit(): void {
-    // Load initial payments from the API
     this.loadPayments();
 
-    // Subscribe to real-time updates for new payments
     this.realTimeUpdatesSubscription = this.apiService.realTimeUpdates$.subscribe({
       next: (message: WebSocketMessage) => {
         if (message.type === 'new_payment' && message.payment) {
-          // Add new payment to the beginning of the list in real-time
-          this.payments.unshift(message.payment);
-          console.log('New payment received via WebSocket:', message.payment);
+          const incoming = { ...message.payment };
+          if (
+            incoming.timestamp &&
+            typeof incoming.timestamp === 'object' &&
+            '_seconds' in incoming.timestamp &&
+            '_nanoseconds' in incoming.timestamp
+          ) {
+            const ts = incoming.timestamp as any;
+            incoming.timestamp = new Date(ts._seconds * 1000 + ts._nanoseconds / 1e6);
+          }
+          const exists = this.payments.some(p => p.id === incoming.id);
+          if (!exists) {
+            this.payments.unshift(incoming as Payment);
+          }
         }
       },
       error: (err) => console.error('Error receiving real-time updates for payments:', err)
@@ -127,20 +133,15 @@ export class PaymentsListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Unsubscribe from WebSocket updates to prevent memory leaks
     if (this.realTimeUpdatesSubscription) {
       this.realTimeUpdatesSubscription.unsubscribe();
     }
   }
 
-  /**
-   * Loads the list of payments from the backend.
-   */
   loadPayments(): void {
     this.apiService.getPayments().subscribe({
       next: (payments: Payment[]) => {
         this.payments = payments;
-        console.log('Payments loaded:', payments);
         this.toastService.showSuccess('Payments loaded');
       },
       error: (err) => {

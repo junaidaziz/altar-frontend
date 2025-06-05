@@ -1,18 +1,15 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, GridResponse, Payment, WebSocketMessage } from '../api.service';
+import { ApiService, GridResponse, WebSocketMessage } from '../api.service';
 import { ToastService } from '../toast/toast.service';
 import { Subscription } from 'rxjs';
-import { HttpErrorResponse } from '@angular/common/http'; // Import HttpErrorResponse
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-generator-page',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule
-  ],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="generator-content">
       <div class="header-controls">
@@ -25,7 +22,7 @@ import { HttpErrorResponse } from '@angular/common/http'; // Import HttpErrorRes
             [(ngModel)]="biasChar"
             [disabled]="biasInputDisabled"
             placeholder="a-z"
-            (keyup.enter)="generateGridWithBias()"
+            (keyup.enter)="onGenerateClick()"
           />
         </div>
         <div class="live-status">
@@ -34,97 +31,118 @@ import { HttpErrorResponse } from '@angular/common/http'; // Import HttpErrorRes
         <div class="code-display">
           YOUR CODE: {{ code }}
         </div>
-        <button (click)="generateGridWithBias()" [disabled]="biasInputDisabled">GENERATE 2D GRID</button>
+        <button (click)="onGenerateClick()" [disabled]="biasInputDisabled">
+          GENERATE 2D GRID
+        </button>
       </div>
       <div *ngIf="gridErrorMessage" class="error-message">
         {{ gridErrorMessage }}
       </div>
 
       <div class="grid-container">
-        <div class="grid-row" *ngFor="let row of grid; let i = index">
-          <div class="grid-cell" *ngFor="let char of row; let j = index">
+        <div class="grid-row" *ngFor="let rowObj of grid; let i = index">
+          <div class="grid-cell" *ngFor="let char of rowObj.cells; let j = index">
             {{ char }}
           </div>
         </div>
       </div>
 
-      <hr>
+      <hr />
 
       <h2>Add Payment</h2>
       <div class="payments-form">
-        <input type="text" placeholder="Payment Name" [(ngModel)]="newPaymentName">
-        <input type="number" placeholder="Amount" [(ngModel)]="newPaymentAmount">
+        <input
+          type="text"
+          placeholder="Payment Name"
+          [(ngModel)]="newPaymentName"
+        />
+        <input
+          type="number"
+          placeholder="Amount"
+          [(ngModel)]="newPaymentAmount"
+        />
         <button (click)="addPayment()">+ ADD</button>
       </div>
       <div *ngIf="paymentErrorMessage" class="error-message">
         {{ paymentErrorMessage }}
       </div>
+
+      <div *ngIf="lastPaymentGridSnippet" class="snippet-display">
+        Saved grid snippet: {{ lastPaymentGridSnippet }}
+      </div>
     </div>
   `,
-  styleUrls: ['../app.component.css'] // Re-use the existing CSS for generator-specific elements
+  styleUrls: ['../app.component.css'],
 })
 export class GeneratorPageComponent implements OnInit, OnDestroy {
-  grid: string[][] = [];
+  grid: { cells: string[] }[] = [];
   code: string = '00';
   liveIndicator: boolean = false;
 
   biasChar: string = '';
   biasInputDisabled: boolean = false;
-  private biasTimer: any;
+  private biasTimer!: ReturnType<typeof setTimeout>;
 
   newPaymentName: string = '';
   newPaymentAmount: number | null = null;
-  paymentErrorMessage: string | null = null; // Property for payment error messages
-  gridErrorMessage: string | null = null;    // New property for grid error messages
+
+  paymentErrorMessage: string | null = null;
+  gridErrorMessage: string | null = null;
+
+  lastPaymentGridSnippet: string | null = null;
 
   private realTimeUpdatesSubscription!: Subscription;
 
-  constructor(private apiService: ApiService, private toastService: ToastService) {}
+  constructor(
+    private apiService: ApiService,
+    private toastService: ToastService,
+    private ngZone: NgZone
+  ) {}
 
   ngOnInit(): void {
-    // Initial call to generate grid and handle potential server errors on page load
-    this.generateGridWithBias(); // This will attempt to fetch a grid and set error if server is down
-
-    this.realTimeUpdatesSubscription = this.apiService.realTimeUpdates$.subscribe({
-      next: (message: WebSocketMessage) => {
-        if (message.type === 'update') {
-          this.grid = message.grid!;
-          this.code = message.code!;
-          this.liveIndicator = true;
-          setTimeout(() => this.liveIndicator = false, 300);
-          this.gridErrorMessage = null; // Clear grid error if WebSocket updates start flowing
-        } else if (message.type === 'initial_state') {
-          this.grid = message.grid!;
-          this.code = message.code!;
-          this.gridErrorMessage = null; // Clear grid error if initial state is received
+    this.realTimeUpdatesSubscription = this.apiService.realTimeUpdates$.subscribe(
+      (message: WebSocketMessage) => {
+        const gridData = message.grid;
+        const codeData = message.code;
+        if (
+          (message.type === 'update' || message.type === 'initial_state') &&
+          Array.isArray(gridData) &&
+          typeof codeData === 'string'
+        ) {
+          this.ngZone.run(() => {
+            this.grid = gridData.map((row) => ({ cells: row }));
+            this.code = codeData;
+            this.flashLiveIndicator();
+            this.gridErrorMessage = null;
+          });
         }
       },
-      error: (err) => {
-        console.error('Error receiving real-time updates:', err);
-        // If WebSocket connection fails, also show a grid error message
-        this.gridErrorMessage = 'Real-time updates disconnected. Please ensure backend server is running.';
-      },
-      complete: () => {
-        console.log('Real-time updates completed.');
-        this.gridErrorMessage = 'Real-time updates completed. Please ensure backend server is running.';
+      (err) => {
+        console.error('Error receiving real-time grid updates:', err);
+        this.ngZone.run(() => {
+          this.gridErrorMessage =
+            'Real-time updates disconnected. Please ensure backend server is running.';
+        });
       }
-    });
+    );
+
+    this.fetchAndUpdateGrid(false);
   }
 
   ngOnDestroy(): void {
     if (this.realTimeUpdatesSubscription) {
       this.realTimeUpdatesSubscription.unsubscribe();
     }
+    clearTimeout(this.biasTimer);
   }
 
-  generateGridWithBias(): void {
-    this.gridErrorMessage = null; // Clear previous error messages for grid
+  onGenerateClick(): void {
+    this.gridErrorMessage = null;
 
     if (this.biasChar && !/^[a-z]$/i.test(this.biasChar)) {
-      this.gridErrorMessage = 'Bias character must be a letter a-z.';
+      this.gridErrorMessage = 'Bias character must be a letter a–z.';
       return;
     }
-
     if (this.biasChar) {
       this.biasChar = this.biasChar.toLowerCase();
     }
@@ -135,36 +153,48 @@ export class GeneratorPageComponent implements OnInit, OnDestroy {
       this.biasInputDisabled = false;
     }, 4000);
 
+    this.fetchAndUpdateGrid(true);
+  }
+
+  private fetchAndUpdateGrid(showToast: boolean): void {
     this.apiService.getGrid(this.biasChar || null).subscribe({
       next: (response: GridResponse) => {
-        console.log('Grid generation request sent via button.');
-        this.gridErrorMessage = null; // Clear error on successful response
-        this.toastService.showSuccess('Grid data loaded');
+        this.ngZone.run(() => {
+          this.grid = response.grid.map((row) => ({ cells: row }));
+          this.code = response.code;
+          this.flashLiveIndicator();
+          if (showToast) {
+            this.toastService.showSuccess('Grid data & code loaded');
+          }
+        });
       },
       error: (err: HttpErrorResponse) => {
-        console.error('Error generating grid:', err);
-        if (err.status === 0) {
-          this.gridErrorMessage = 'Could not connect to the backend server to generate grid. Please ensure the server is running.';
-        } else if (err.error && err.error.error) {
-          this.gridErrorMessage = `Server Error: ${err.error.error}`;
-        } else {
-          this.gridErrorMessage = 'An unexpected error occurred while generating grid.';
-        }
-        this.toastService.showError(this.gridErrorMessage);
-      }
+        console.error('Error fetching grid via HTTP:', err);
+        this.ngZone.run(() => {
+          if (err.status === 0) {
+            this.gridErrorMessage =
+              'Could not connect to the backend server. Please ensure it is running.';
+          } else if (err.error && err.error.error) {
+            this.gridErrorMessage = `Server Error: ${err.error.error}`;
+          } else {
+            this.gridErrorMessage =
+              'An unexpected error occurred while generating grid.';
+          }
+          this.toastService.showError(this.gridErrorMessage);
+        });
+      },
     });
   }
 
   addPayment(): void {
-    this.paymentErrorMessage = null; // Clear previous error messages for payment
+    this.paymentErrorMessage = null;
 
     if (this.grid.length === 0) {
-      this.paymentErrorMessage = 'No grid data available. Cannot save payment.';
+      this.paymentErrorMessage =
+        'No grid data available. Cannot save payment.';
       this.toastService.showError(this.paymentErrorMessage);
       return;
     }
-
-    // Client-side validation
     if (!this.newPaymentName.trim()) {
       this.paymentErrorMessage = 'Payment Name cannot be empty.';
       return;
@@ -174,33 +204,47 @@ export class GeneratorPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const paymentToAdd: Payment = {
+    const flatChars = this.grid.flatMap((r) => r.cells);
+    const snippetChars = flatChars.slice(0, 10);
+    const gridSnippet = snippetChars.join('');
+
+    const paymentToAdd: any = {
       name: this.newPaymentName.trim(),
       amount: this.newPaymentAmount,
       code: this.code,
       grid: this.grid,
-      timestamp: new Date()
+      gridSnippet,
+      timestamp: new Date(),
     };
 
     this.apiService.addPayment(paymentToAdd).subscribe({
-      next: (addedPayment: Payment) => {
-        console.log('Payment added:', addedPayment);
+      next: (addedPayment: any) => {
         this.newPaymentName = '';
         this.newPaymentAmount = null;
-        this.paymentErrorMessage = null; // Clear error on success
+        this.paymentErrorMessage = null;
+        this.lastPaymentGridSnippet = gridSnippet;
         this.toastService.showSuccess('Payment added successfully');
       },
       error: (err: HttpErrorResponse) => {
         console.error('Error adding payment:', err);
-        if (err.status === 0) {
-          this.paymentErrorMessage = 'Could not connect to the backend server. Please ensure the server is running.';
-        } else if (err.error && err.error.error) {
-          this.paymentErrorMessage = `Server Error: ${err.error.error}`;
-        } else {
-          this.paymentErrorMessage = 'An unexpected error occurred while adding payment.';
-        }
-        this.toastService.showError(this.paymentErrorMessage);
-      }
+        this.ngZone.run(() => {
+          if (err.status === 0) {
+            this.paymentErrorMessage =
+              'Could not connect to the backend server. Please ensure it is running.';
+          } else if (err.error && err.error.error) {
+            this.paymentErrorMessage = `Server Error: ${err.error.error}`;
+          } else {
+            this.paymentErrorMessage =
+              'An unexpected error occurred while adding payment.';
+          }
+          this.toastService.showError(this.paymentErrorMessage);
+        });
+      },
     });
+  }
+
+  private flashLiveIndicator(): void {
+    this.liveIndicator = true;
+    setTimeout(() => (this.liveIndicator = false), 300);
   }
 }

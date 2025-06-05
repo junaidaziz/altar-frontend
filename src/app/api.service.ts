@@ -1,15 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, Subject } from 'rxjs';
 import { environment } from '../environments/environment';
-import { map } from 'rxjs/operators'; // Import the map operator
-import { Database, ref, onValue } from '@angular/fire/database';
+import { map } from 'rxjs/operators';
 
 export interface GridResponse {
   grid: string[][];
-}
-
-export interface CodeResponse {
   code: string;
 }
 
@@ -18,43 +14,61 @@ export interface Payment {
   name: string;
   amount: number;
   code: string;
-  grid: string[][];
+  grid: { cells: string[] }[];
+  gridSnippet?: string;
   timestamp?: Date;
 }
 
-// Ensure this interface correctly includes 'new_payment'
 export interface WebSocketMessage {
   type: 'initial_state' | 'update' | 'new_payment';
   grid?: string[][];
   code?: string;
-  payment?: Payment;
+  payment?: Payment & { timestamp: { _seconds: number; _nanoseconds: number } | Date };
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
-export class ApiService {
+export class ApiService implements OnDestroy {
   private apiUrl = environment.apiUrl;
-  private firebaseUnsubscribe: (() => void) | null = null;
+  private gridEventSource!: EventSource;
+  private paymentsEventSource!: EventSource;
 
   private realTimeUpdatesSubject = new Subject<WebSocketMessage>();
   public realTimeUpdates$ = this.realTimeUpdatesSubject.asObservable();
 
-  constructor(private http: HttpClient, private db: Database) {
-    this.connectFirebase();
+  constructor(private http: HttpClient) {
+    this.connectSSE();
   }
 
-  private connectFirebase(): void {
-    const updatesRef = ref(this.db, 'updates');
-    this.firebaseUnsubscribe = onValue(updatesRef, snapshot => {
-      const msg = snapshot.val() as WebSocketMessage | null;
-      if (msg) {
-        if (msg.type === 'new_payment' && msg.payment && typeof msg.payment.timestamp === 'string') {
-          msg.payment.timestamp = new Date(msg.payment.timestamp);
-        }
-        this.realTimeUpdatesSubject.next(msg);
+  private connectSSE(): void {
+    this.gridEventSource = new EventSource(`${this.apiUrl}/api/grid/stream`);
+    this.gridEventSource.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data) as WebSocketMessage;
+        this.realTimeUpdatesSubject.next(payload);
+      } catch {
+        // ignore parse errors
       }
-    });
+    };
+    this.gridEventSource.onerror = () => {
+      this.gridEventSource.close();
+    };
+
+    this.paymentsEventSource = new EventSource(
+      `${this.apiUrl}/api/payments/stream`
+    );
+    this.paymentsEventSource.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data) as WebSocketMessage;
+        this.realTimeUpdatesSubject.next(payload);
+      } catch {
+        // ignore parse errors
+      }
+    };
+    this.paymentsEventSource.onerror = () => {
+      this.paymentsEventSource.close();
+    };
   }
 
   getGrid(biasChar: string | null = null): Observable<GridResponse> {
@@ -65,16 +79,30 @@ export class ApiService {
     return this.http.get<GridResponse>(url);
   }
 
-  postCode(grid: string[][]): Observable<CodeResponse> {
-    return this.http.post<CodeResponse>(`${this.apiUrl}/api/code`, { grid });
+  postCode(grid: string[][]): Observable<{ code: string }> {
+    return this.http.post<{ code: string }>(`${this.apiUrl}/api/code`, { grid });
   }
 
   getPayments(): Observable<Payment[]> {
-    return this.http.get<Payment[]>(`${this.apiUrl}/api/payments`).pipe(
-      map(payments => payments.map(payment => ({
-        ...payment,
-        timestamp: payment.timestamp ? new Date(payment.timestamp) : undefined
-      })))
+    return this.http.get<any[]>(`${this.apiUrl}/api/payments`).pipe(
+      map((payments) =>
+        payments.map((p) => {
+          let date: Date | undefined;
+          if (
+            p.timestamp &&
+            typeof p.timestamp === 'object' &&
+            '_seconds' in p.timestamp &&
+            '_nanoseconds' in p.timestamp
+          ) {
+            const ts = p.timestamp as any;
+            date = new Date(ts._seconds * 1000 + ts._nanoseconds / 1e6);
+          }
+          return {
+            ...p,
+            timestamp: date,
+          } as Payment;
+        })
+      )
     );
   }
 
@@ -82,10 +110,8 @@ export class ApiService {
     return this.http.post<Payment>(`${this.apiUrl}/api/payments`, payment);
   }
 
-  closeFirebase(): void {
-    if (this.firebaseUnsubscribe) {
-      this.firebaseUnsubscribe();
-      this.firebaseUnsubscribe = null;
-    }
+  ngOnDestroy(): void {
+    this.gridEventSource?.close();
+    this.paymentsEventSource?.close();
   }
 }
