@@ -29,7 +29,7 @@ describe('GeneratorPageComponent', () => {
 
   it('should reject invalid bias characters', () => {
     component.biasChar = '1';
-    component.generateGridWithBias();
+    component.onGenerateClick();
     expect(apiService.getGrid).not.toHaveBeenCalled();
     expect(component.gridErrorMessage).toBe('Bias character must be a letter a-z.');
     expect(component.biasInputDisabled).toBeFalse();
@@ -37,7 +37,7 @@ describe('GeneratorPageComponent', () => {
 
   it('should lowercase and send valid bias character with cooldown', fakeAsync(() => {
     component.biasChar = 'B';
-    component.generateGridWithBias();
+    component.onGenerateClick();
     expect(apiService.getGrid).toHaveBeenCalledOnceWith('b');
     expect(component.biasInputDisabled).toBeTrue();
     tick(4000);
